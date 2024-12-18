@@ -95,3 +95,4 @@ pytestdebug.log
 # Local development files
 .env.local
 .env.*.local
+.DS_Store
