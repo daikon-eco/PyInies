@@ -9,12 +9,7 @@ from typing import List, Dict
 from datetime import datetime
 import logging
 
-from .models import *
-
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
-)
-logging.getLogger("httpx").setLevel(logging.WARNING)
+from models import *
 
 
 class IniesClient:
@@ -24,7 +19,7 @@ class IniesClient:
         else:
             self.login_infos = login_infos
         self.login_infos_last_update = time()
-        self.normes = self.get_normes()
+        self.norms = self.get_norms()
         self.indicators, self.phases = self.get_all_indicators_and_phases()
         self.semaphore = asyncio.Semaphore(max_concurrent_tasks)
         self.client = httpx.AsyncClient(timeout=60.0)
@@ -41,34 +36,34 @@ class IniesClient:
         data = response.json()
         return LoginInfos(**data)
 
-    def get_normes(self):
+    def get_norms(self):
         url = "https://base-inies.fr/ws/Norme"
         headers = {"authorization": f"Bearer {self.login_infos.access_token}"}
-        logging.info(f"Fetching normes")
+        logging.info(f"Fetching norms")
 
         response = requests.get(url, headers=headers)
         response.raise_for_status()
 
-        normes = {}
+        norms = {}
         for resp in response.json():
-            normes[resp["id"]] = resp["name"]
+            norms[resp["id"]] = resp["name"]
 
-        return normes
+        return norms
 
     def get_all_indicators_and_phases(self):
         indicators: Dict[list] = {}
         phases: Dict[list] = {}
-        if not self.normes:
-            self.normes = self.get_normes()
+        if not self.norms:
+            self.norms = self.get_norms()
         logging.info(f"Fetching indicators and phases")
-        for norme_id in self.normes.keys():
-            indicators[norme_id], phases[norme_id] = (
-                self.get_indicators_and_phases_for_norme(norme_id)
+        for norm_id in self.norms.keys():
+            indicators[norm_id], phases[norm_id] = (
+                self.get_indicators_and_phases_for_norm(norm_id)
             )
         return indicators, phases
 
-    def get_indicators_and_phases_for_norme(self, norme_id: int):
-        url = f"https://base-inies.fr/ws/Norme/{norme_id}"
+    def get_indicators_and_phases_for_norm(self, norm_id: int):
+        url = f"https://base-inies.fr/ws/Norme/{norm_id}"
         headers = {"authorization": f"Bearer {self.login_infos.access_token}"}
 
         response = requests.get(url, headers=headers)
@@ -112,7 +107,7 @@ class IniesClient:
         ]
         for result in tqdm.as_completed(
             tasks,
-            desc=f"Processing EPDs",
+            desc=f"Fetching EPDs",
             unit="epd",
             total=len(all_epds_short),
         ):
@@ -154,7 +149,7 @@ class IniesClient:
 
         epd = Epd(**response.json())
         # Populate indicators, phases
-        epd.indicatorSet.populate_name(self.normes)
+        epd.indicatorSet.populate_name(self.norms)
         epd.indicatorSet.populate_indicators(
             self.indicators[epd.indicatorSet.id], self.phases[epd.indicatorSet.id]
         )

@@ -6,7 +6,7 @@ authors = ["Alexandre Duverger <42521043+aduverger@users.noreply.github.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = ">=3.12,<3.14"
 pandas = "^2.2.3"
 requests = "^2.32.3"
 pydantic = "^2.10.3"
@@ -16,6 +16,7 @@ openpyxl = "^3.1.5"
 
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.1.1"
+pyinstaller = "^6.11.1"
 
 [build-system]
 requires = ["poetry-core"]

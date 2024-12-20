@@ -2,7 +2,7 @@ import pandas as pd
 from typing import List
 import numpy as np
 
-from .models import Epd
+from models import Epd
 
 
 def process_all_epds(all_epds: List[Epd]) -> pd.DataFrame:
@@ -55,6 +55,23 @@ def process_all_epds(all_epds: List[Epd]) -> pd.DataFrame:
         lambda row: row[cols[0]] if pd.notna(row[cols[0]]) else row[cols[1]], axis=1
     )
 
+    cols = ("A5-Processus de construction – installation", "Mise en oeuvre")
+    df[cols[0]] = df.apply(
+        lambda row: row[cols[0]] if pd.notna(row[cols[0]]) else row[cols[1]], axis=1
+    )
+
+    cols = (
+        "Étape du processus de construction",
+        "A4-Transport",
+        "A5-Processus de construction – installation",
+    )
+    df[cols[0]] = df.apply(
+        lambda row: (
+            row[cols[0]] if pd.notna(row[cols[0]]) else row[cols[1]] + row[cols[2]]
+        ),
+        axis=1,
+    )
+
     cols = ("Étape d’utilisation", "Vie en oeuvre")
     df[cols[0]] = df.apply(
         lambda row: row[cols[0]] if pd.notna(row[cols[0]]) else row[cols[1]], axis=1
@@ -65,13 +82,9 @@ def process_all_epds(all_epds: List[Epd]) -> pd.DataFrame:
         lambda row: row[cols[0]] if pd.notna(row[cols[0]]) else row[cols[1]], axis=1
     )
 
-    df["A"] = np.maximum(
-        df["Étape de production"].fillna(0)
-        + df["Étape du processus de construction"].fillna(0),
-        df["Étape de production"].fillna(0)
-        + df["A4-Transport"].fillna(0)
-        + df["A5-Processus de construction – installation"].fillna(0),
-    )
+    df["A"] = df["Étape de production"].fillna(0) + df[
+        "Étape du processus de construction"
+    ].fillna(0)
 
     df.issueDate = df.issueDate.apply(
         lambda x: x.strftime("%Y/%m/%d") if pd.notna(x) else x
