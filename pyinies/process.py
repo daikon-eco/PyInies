@@ -1,8 +1,7 @@
 import pandas as pd
 from typing import List
-import numpy as np
 
-from models import Epd
+from pyinies.models import Epd
 
 
 def process_all_epds(all_epds: List[Epd]) -> pd.DataFrame:

@@ -1,4 +1,7 @@
+from pathlib import Path
+import sys
 from tqdm.asyncio import tqdm
+from dotenv import load_dotenv
 import requests
 from time import time
 from datetime import datetime
@@ -6,14 +9,22 @@ import asyncio
 import httpx
 import os
 from typing import List, Dict
-from datetime import datetime
 import logging
 
-from models import *
+from pyinies.models import *
+
+
+def get_env_file_path():
+    if getattr(sys, "frozen", False):
+        return Path(sys._MEIPASS) / ".env"
+    else:
+        return Path(__file__).parents[1] / ".env"
 
 
 class IniesClient:
     def __init__(self, login_infos: LoginInfos = None, max_concurrent_tasks: int = 20):
+        env_path = get_env_file_path()
+        load_dotenv(env_path)
         if not login_infos:
             self.login_infos = self.login()
         else:
@@ -28,7 +39,7 @@ class IniesClient:
         url = "https://base-inies.fr/ws/Login"
         payload = {"email": os.getenv("API_LOGIN"), "apiKey": os.getenv("API_KEY")}
         headers = {"content-type": "application/json"}
-        logging.info(f"Logging in to {url}.")
+        logging.info(f"Logging into {url}.")
 
         response = requests.post(url, json=payload, headers=headers)
         response.raise_for_status()
@@ -108,7 +119,7 @@ class IniesClient:
         for result in tqdm.as_completed(
             tasks,
             desc=f"Fetching EPDs",
-            unit="epd",
+            unit="EPD",
             total=len(all_epds_short),
         ):
             try:
@@ -148,7 +159,6 @@ class IniesClient:
             raise
 
         epd = Epd(**response.json())
-        # Populate indicators, phases
         epd.indicatorSet.populate_name(self.norms)
         epd.indicatorSet.populate_indicators(
             self.indicators[epd.indicatorSet.id], self.phases[epd.indicatorSet.id]

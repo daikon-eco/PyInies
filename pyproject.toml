@@ -1,9 +1,11 @@
 [tool.poetry]
-name = "zefco-inies"
+name = "pyinies"
 version = "0.1.0"
 description = ""
 authors = ["Alexandre Duverger <42521043+aduverger@users.noreply.github.com>"]
 readme = "README.md"
+packages = [{ include = "pyinies" }]
+
 
 [tool.poetry.dependencies]
 python = ">=3.12,<3.14"
@@ -12,11 +14,13 @@ requests = "^2.32.3"
 pydantic = "^2.10.3"
 tqdm = "^4.67.1"
 openpyxl = "^3.1.5"
+python-dotenv = "^1.0.1"
 
 
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.1.1"
 pyinstaller = "^6.11.1"
+pillow = "^11.1.0"
 
 [build-system]
 requires = ["poetry-core"]
