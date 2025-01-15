@@ -34,6 +34,35 @@ class IniesClient:
         self.indicators, self.phases = self.get_all_indicators_and_phases()
         self.semaphore = asyncio.Semaphore(max_concurrent_tasks)
         self.client = httpx.AsyncClient(timeout=60.0)
+        self.refresh_lock = asyncio.Lock()
+
+    async def get_auth_headers(self):
+        if not self.login_infos or time() - self.login_infos_last_update > 20 * 60:
+            async with self.refresh_lock:
+                # Re-check the condition after acquiring the lock
+                if (
+                    not self.login_infos
+                    or time() - self.login_infos_last_update > 20 * 60
+                ):
+                    logging.info("Token expired or missing. Refreshing token...")
+                    await self.refresh_token()
+        return {"authorization": f"Bearer {self.login_infos.access_token}"}
+
+    async def refresh_token(self):
+        url = "https://base-inies.fr/ws/RefreshToken"
+        headers = {"content-type": "application/json"}
+        payload = {
+            "accessToken": self.login_infos.access_token,
+            "refreshToken": self.login_infos.refresh_token,
+        }
+        logging.info(f"...Refreshing token...")
+
+        response = await self.client.post(url, json=payload, headers=headers)
+
+        response.raise_for_status()
+        self.login_infos = LoginInfos(**response.json())
+        self.login_infos_last_update = time()
+        logging.info("...Token refreshed successfully.")
 
     def login(self):
         url = "https://base-inies.fr/ws/Login"
@@ -82,28 +111,6 @@ class IniesClient:
         response = response.json()
 
         return response["indicators"], response["phases"]
-
-    async def refresh_token(self):
-        url = "https://base-inies.fr/ws/RefreshToken"
-        headers = {"content-type": "application/json"}
-        payload = {
-            "accessToken": self.login_infos.access_token,
-            "refreshToken": self.login_infos.refresh_token,
-        }
-        logging.info(f"...Refreshing token...")
-
-        response = await self.client.post(url, json=payload, headers=headers)
-
-        response.raise_for_status()
-        self.login_infos = LoginInfos(**response.json())
-        self.login_infos_last_update = time()
-        logging.info("...Token refreshed successfully.")
-
-    async def get_auth_headers(self):
-        if not self.login_infos or time() - self.login_infos_last_update > 20 * 60:
-            logging.info("Token expired or missing...")
-            await self.refresh_token()
-        return {"authorization": f"Bearer {self.login_infos.access_token}"}
 
     async def get_all_epds(self, since_date: datetime = None) -> List[Epd]:
         all_epds_short = await self.get_all_epds_short(since_date)
@@ -184,7 +191,7 @@ class IniesClient:
                         await asyncio.sleep(delay)
                     else:
                         logging.error(
-                            f"HTTP error cannot be resolved or no more retries: {e}. Args: {kwargs}"
+                            f"HTTP error cannot be resolved or no more retries ({attempt+1}/{retries}): {e}. Args: {kwargs}"
                         )
                         raise
                 except Exception as e:
