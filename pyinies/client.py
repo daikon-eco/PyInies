@@ -191,7 +191,7 @@ class IniesClient:
                         await asyncio.sleep(delay)
                     else:
                         logging.error(
-                            f"HTTP error cannot be resolved or no more retries: {e}. Args: {kwargs}"
+                            f"HTTP error cannot be resolved or no more retries ({attempt+1}/{retries}): {e}. Args: {kwargs}"
                         )
                         raise
                 except Exception as e:
