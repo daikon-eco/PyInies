@@ -13,7 +13,7 @@ class LoginInfos(BaseModel):
 
 class FuConstituantProduct(BaseModel):
     name: str
-    quantity: float
+    quantity: Optional[float] = None
     unit: str
     unitId: int
     constituantType: Optional[int]
@@ -61,7 +61,7 @@ class IndicatorQuantity(BaseModel):
     indicatorUnit: Optional[str] = None
     phaseId: int
     phaseName: Optional[str] = None
-    quantity: float
+    quantity: Optional[float] = None
 
     def populate_indicator_fields(self, indicators: List[dict]):
         for indicator in indicators:
