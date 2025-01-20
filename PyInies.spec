@@ -35,7 +35,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['inies_logo_white.png'],
+    icon=['img/inies_logo_white.png'],
 )
 
 # Build a .app if on OS X
